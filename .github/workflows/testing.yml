@@ -13,15 +13,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: secrets
 
     services:
       postgres:
         image: postgres:10.8
         env:
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: github_actions
         ports:
           - 5432:5432
         # needed because the postgres container does not provide a healthcheck
@@ -41,10 +40,7 @@ jobs:
           pip install -r requirements.txt
       - name: Django testing
         env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          SECRET_KEY: rAnD0MstR1nGGitHubActionsw0rKflOw
         run: |
           coverage run manage.py test
       - name: Tests coverage
