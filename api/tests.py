@@ -54,11 +54,9 @@ class APIViewsTests(TestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_list_all_messages(self):
-        Message.objects.bulk_create([
-            Message(content='message 1'),
-            Message(content='message 2'),
-            Message(content='message 3'),
-        ])
+        Message.objects.create(content='message1')
+        Message.objects.create(content='message2')
+        Message.objects.create(content='message3')
         response = self.client.get(f'{self.BASE_URL}/messages', **self.bearer_token)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self.assertEqual(len(response.json()), 3)
