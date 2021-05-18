@@ -39,11 +39,10 @@ class GetUpdateDeleteMessageAPIView(RetrieveUpdateDestroyAPIView):
     PUT/PATCH   api/messages/<id>
     """
     serializer_class = MessageSerializer
-    lookup_field = 'id'
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        return Message.objects.filter(id=self.kwargs[self.lookup_field])
+        return Message.objects.filter(pk=self.kwargs[self.lookup_field])
 
     def retrieve(self, request, *args, **kwargs):
         """GET method handler - retrieve message with given id"""

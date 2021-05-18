@@ -79,7 +79,7 @@ class APIViewsTests(TestCase):
 
     def test_get_message(self):
         message = Message.objects.create(content='Test')
-        self.assertEqual(message.id, 1)
+        self.assertEqual(message.pk, 1)
         self.assertEqual(message.views, 0)
         response = self.client.get(f'{self.BASE_URL}/messages/1', **self.bearer_token)
         message.refresh_from_db()
@@ -106,7 +106,7 @@ class APIViewsTests(TestCase):
         self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
         self.assertEqual(Message.objects.all().count(), 1)
         with self.assertRaises(ObjectDoesNotExist):
-            Message.objects.get(id=2)
+            Message.objects.get(pk=2)
 
     def test_get_update_delete_no_id_given(self):
         response = self.client.get(f'{self.BASE_URL}/messages/', **self.bearer_token)
