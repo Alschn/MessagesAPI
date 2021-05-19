@@ -1,5 +1,8 @@
 from django.urls import path
 
-urlpatterns = [
+from api.views import GetUpdateDeleteMessageAPIView, ListCreateMessageAPIView
 
+urlpatterns = [
+    path('messages', ListCreateMessageAPIView.as_view()),
+    path('messages/<int:id>', GetUpdateDeleteMessageAPIView.as_view()),
 ]

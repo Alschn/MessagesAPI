@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+import datetime
 import os
 from pathlib import Path
 
@@ -19,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-7j0esjwr=ilgg02penxlu50h$b_^mij!a^%@i$97wsipp6aiaj')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -38,9 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # installed apps
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     # apps
     'api',
+    'authorization',
 ]
 
 MIDDLEWARE = [
@@ -89,9 +92,9 @@ if os.environ.get('GITHUB_WORKFLOW'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'github_actions',
-            'USER': 'postgres',
-            'PASSWORD': 'postgres',
+            'NAME': os.environ.get('POSTGRES_DB'),
+            'USER': os.environ.get('POSTGRES_USER'),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
             'HOST': '127.0.0.1',
             'PORT': '5432',
         }
@@ -138,3 +141,18 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# corsheaders
+CORS_ALLOW_ALL_ORIGINS = True
+
+# authentication
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(hours=2),
+    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=1),
+}
