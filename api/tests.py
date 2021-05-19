@@ -54,9 +54,11 @@ class APIViewsTests(TestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_list_all_messages(self):
-        Message.objects.create(content='message1')
-        Message.objects.create(content='message2')
-        Message.objects.create(content='message3')
+        Message.objects.bulk_create([
+            Message(content='message1'),
+            Message(content='message2'),
+            Message(content='message3'),
+        ])
         response = self.client.get(f'{self.BASE_URL}/messages', **self.bearer_token)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self.assertEqual(len(response.json()), 3)
@@ -79,34 +81,34 @@ class APIViewsTests(TestCase):
 
     def test_get_message(self):
         message = Message.objects.create(content='Test')
-        self.assertEqual(message.pk, 1)
         self.assertEqual(message.views, 0)
-        response = self.client.get(f'{self.BASE_URL}/messages/1', **self.bearer_token)
+        response = self.client.get(f'{self.BASE_URL}/messages/{message.id}', **self.bearer_token)
         message.refresh_from_db()
         self.assertEqual(response.status_code, HTTP_200_OK)
         self.assertEqual(response.json(), MessageSerializer(message).data)
         self.assertEqual(message.views, 1)
 
     def test_update_message(self):
-        message = Message.objects.create(content='Test message')
+        message = Message.objects.create(content='Test message', views=1)
         self.assertEqual(message.content, 'Test message')
-        response = self.client.patch(f'{self.BASE_URL}/messages/1', data={
+        response = self.client.patch(f'{self.BASE_URL}/messages/{message.id}', data={
             'content': 'Updated message'
         }, **self.bearer_token)
         self.assertEqual(response.status_code, HTTP_200_OK)
         message.refresh_from_db()
         self.assertEqual(message.content, 'Updated message')
-        self.assertEqual(response.json(), MessageSerializer(message).data)
+        self.assertEqual(response.json()['views'], 0)
 
     def test_delete_message(self):
         Message.objects.create(content='1st message')
-        Message.objects.create(content='2nd message')
+        m2 = Message.objects.create(content='2nd message')
+        key = m2.id
         self.assertEqual(Message.objects.all().count(), 2)
-        response = self.client.delete(f'{self.BASE_URL}/messages/2', **self.bearer_token)
+        response = self.client.delete(f'{self.BASE_URL}/messages/{key}', **self.bearer_token)
         self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
         self.assertEqual(Message.objects.all().count(), 1)
         with self.assertRaises(ObjectDoesNotExist):
-            Message.objects.get(pk=2)
+            Message.objects.get(id=key)
 
     def test_get_update_delete_no_id_given(self):
         response = self.client.get(f'{self.BASE_URL}/messages/', **self.bearer_token)
