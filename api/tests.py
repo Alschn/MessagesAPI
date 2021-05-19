@@ -1,3 +1,6 @@
+import random
+import string
+
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase
@@ -72,6 +75,18 @@ class APIViewsTests(TestCase):
     def test_create_empty_message(self):
         response = self.client.post(f'{self.BASE_URL}/messages', data={
             'content': ''
+        }, **self.bearer_token)
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+
+    def test_create_message_160_characters(self):
+        response = self.client.post(f'{self.BASE_URL}/messages', data={
+            'content': ''.join(random.choice(string.ascii_letters) for i in range(160))
+        }, **self.bearer_token)
+        self.assertEqual(response.status_code, HTTP_201_CREATED)
+
+    def test_create_too_long_message(self):
+        response = self.client.post(f'{self.BASE_URL}/messages', data={
+            'content': ''.join(random.choice(string.ascii_letters) for i in range(200))
         }, **self.bearer_token)
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
