@@ -9,4 +9,5 @@ class Message(models.Model):
     updated_at = models.DateTimeField(auto_now=True, blank=True)
 
     def __str__(self) -> str:
-        return f"Message {self.id}, views {self.views}"
+        return f"Message {self.id}, views {self.views}," \
+               f" content: {(self.content[:30] + '..') if len(self.content) > 30 else self.content}"
