@@ -1,3 +1,6 @@
+import random
+import string
+
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase
@@ -75,6 +78,18 @@ class APIViewsTests(TestCase):
         }, **self.bearer_token)
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
+    def test_create_message_160_characters(self):
+        response = self.client.post(f'{self.BASE_URL}/messages', data={
+            'content': ''.join(random.choice(string.ascii_letters) for i in range(160))
+        }, **self.bearer_token)
+        self.assertEqual(response.status_code, HTTP_201_CREATED)
+
+    def test_create_too_long_message(self):
+        response = self.client.post(f'{self.BASE_URL}/messages', data={
+            'content': ''.join(random.choice(string.ascii_letters) for i in range(200))
+        }, **self.bearer_token)
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+
     def test_get_message_not_exists(self):
         response = self.client.get(f'{self.BASE_URL}/messages/1', **self.bearer_token)
         self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
@@ -98,6 +113,23 @@ class APIViewsTests(TestCase):
         message.refresh_from_db()
         self.assertEqual(message.content, 'Updated message')
         self.assertEqual(response.json()['views'], 0)
+        self.assertEqual(message.views, 0)
+
+    def test_update_message_same_content(self):
+        message = Message.objects.create(content='Test message', views=1)
+        self.assertEqual(message.content, 'Test message')
+        response = self.client.put(f'{self.BASE_URL}/messages/{message.id}', data={
+            'content': 'Test message'
+        }, **self.bearer_token)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+
+    def test_update_message_no_content(self):
+        message = Message.objects.create(content='Test message')
+        self.assertEqual(message.content, 'Test message')
+        response = self.client.patch(f'{self.BASE_URL}/messages/{message.id}', data={
+            'content': ''
+        }, **self.bearer_token)
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
     def test_delete_message(self):
         Message.objects.create(content='1st message')
