@@ -8,20 +8,20 @@ Users can send requests to API to view messages anonymously.
 In order to create/update/delete messages **JWT** is required.
 (Authorization: Bearer {token} attached to the headers). API provides endpoints for registration and token retrieval.  
 On every GET request, message's view count is incremented. 
-It does not apply to the view which lists all of the messages but it could be added. 
+It does not apply to the view which lists all of the messages but it could be added.   
 On every PUT/PATCH request, message's content is updated and view count is set to 0.
 
 
 ### Used frameworks, libraries, tools, databases:
 - Django + Django REST Framework
 
-**Json Web Token authentication** is possible thanks to `rest_framework_simplejwt`, 
+**Json Web Token authentication** is possible thanks to `rest_framework_simplejwt` package, 
 which provides JWT implementation including DRF views for obtaining and refreshing tokens.   
 
 Tools: Pycharm IDE, Postman
 
 Production database is Heroku Postgres. 
-Postgres is also used by Github Actions where unit tests are ran.
+Postgres is also used by Github Actions where unit tests are ran.  
 Locally I used default SQLite database.
 
 ### Database schema:
@@ -51,7 +51,7 @@ and its secret key, meaning that tokens are actually not stored in db)
 ### API Endpoints:
 | HTTP Method | API endpoint            | Request body                                       | Response body                                                                                                                                           | Description                                                                    | Authorization header |
 |-------------|-------------------------|----------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------|----------------------|
-| POST        | [api/auth/register/](https://messages-api-daftcode.herokuapp.com/api/auth/register/)       | Object {<br> username: str,<br> password: str<br>} | Object {<br> id: number,<br> username: str,<br> email: str,<br> first_name: str,<br> last_name: str,<br> is_admin: bool<br>}                            | Creates new user. Returns simplified user object.                              | None                 |
+| POST        | [api/auth/register/](https://messages-api-daftcode.herokuapp.com/api/auth/register/)       | Object {<br> username: str,<br> password: str<br>} | Object {<br> id: number,<br> username: str,<br> email: str,<br> first_name: str,<br> last_name: str,<br> is_staff: bool<br>}                            | Creates new user. Returns simplified user object.                              | None                 |
 | POST        | [api/auth/token/](https://messages-api-daftcode.herokuapp.com/api/auth/token/)          | Object {<br> username: str,<br> password: str<br>} | Object {<br> refresh: str,<br> access: str<br>}                                                                                                         | Returns personal JWT access and refresh tokens.                                | None                 |
 | POST        | [api/auth/token/refresh/](https://messages-api-daftcode.herokuapp.com/api/auth/token/refresh)  | Object {<br> refresh: str<br>}                     | Object {<br> access: str<br>}                                                                                                                           | Returns refreshed JWT access token.                                            | None                 |
 | GET         | [api/messages ](https://messages-api-daftcode.herokuapp.com/api/messages)            |                          X                         | Array\<Object\> [<br> Object {<br>  id: number,<br>  content: str,<br>  views: number,<br>  created_at: datetime,<br>  updated_at: datetime,<br> }<br>] | Lists all of the existing message objects.                                     | None                 |
@@ -77,10 +77,10 @@ there is no need for creating a view for each CRUD operation.
 Allows GET, PUT, PATCH, DELETE and safe methods HEAD, OPTIONS.
 
 ### How to use this API:
-Here are some examples how you can interact with API using different tools (curl, Javascript, Python).
+Here are some examples how you can interact with API using different tools (curl, Javascript, Python).  
 I personally recommend using Postman.
 
-Register yourself if you do not own account.
+Register yourself if you do not own an account.
 ```shell script
 curl -d "username=YourUserName&password=YourPassword" -X POST https://messages-api-daftcode.herokuapp.com/api/auth/register/
 ```
@@ -148,7 +148,7 @@ print(message.json())
 
 # update message
 payload = json.dumps({'content': 'updated content'})
-updated_message = requests.post('https://messages-api-daftcode.herokuapp.com/api/messages',
+updated_message = requests.post('https://messages-api-daftcode.herokuapp.com/api/messages/1',
     data=payload,
     headers=headers
 )
