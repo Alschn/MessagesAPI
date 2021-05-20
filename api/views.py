@@ -14,7 +14,7 @@ class ListCreateMessageAPIView(ListCreateAPIView):
     GET   api/messages  - lists all messages
     POST  api/messages  - creates message with given content
     """
-    queryset = Message.objects.all()
+    queryset = Message.objects.all().order_by('-updated_at')
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
@@ -68,7 +68,7 @@ class GetUpdateDeleteMessageAPIView(RetrieveUpdateDestroyAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, *args, **kwargs):
-        """DELETE method handler - delete message with given it
-        Inherits default behaviour.
+        """DELETE method handler - delete message with given id
+        Inherits default behaviour of DestroyAPIView's delete method.
         """
         return super().delete(request, *args, **kwargs)
