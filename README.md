@@ -3,31 +3,55 @@
 </div>
 
 ### Description:
-REST API with CRUD operations on messages objects.
+**REST API** with CRUD operations on messages objects.
 Users can send requests to API to view messages anonymously. 
-In order to create/update/delete messages JWT Authentication is required
-(Authorization: Bearer {token} attached to the headers). 
+In order to create/update/delete messages **JWT** is required.
+(Authorization: Bearer {token} attached to the headers). API provides endpoints for registration and token retrieval.  
 On every GET request, message's view count is incremented. 
-On every PUT/PATCH request content is updated and view count is set to 0.
+It does not apply to the view which lists all of the messages but it could be added.   
+On every PUT/PATCH request, message's content is updated and view count is set to 0.
 
 
-### Used frameworks, libraries:
+### Used frameworks, libraries, tools, databases:
 - Django + Django REST Framework
 
-JWT authentication is possible thanks to `rest_framework_simplejwt`. 
-Tests and their reports are run using `coverage`.
-
-Database: Heroku Postgres  
+**Json Web Token authentication** is possible thanks to `rest_framework_simplejwt` package, 
+which provides JWT implementation including DRF views for obtaining and refreshing tokens.   
 
 Tools: Pycharm IDE, Postman
 
+Production database is Heroku Postgres. 
+Postgres is also used by Github Actions where unit tests are ran.  
+Locally I used default SQLite database.
+
 ### Database schema:
-...
+ERD diagram including Django's base entities and manually created **Message** entity.
+![Entity Relationship Diagram](docs/ERD.png)
+
+#### Message model:
+![Entity Relationship Diagram](docs/message.png)
+
+Message has its own content which can be from 1 to 160 characters long.
+It stores two datetime attributes: created_at and updated_at 
+which both are initially set on record's creation. 
+**View count has been implemented as an attribute**. 
+When increasing view count, Django's [F expression](https://docs.djangoproject.com/en/3.2/ref/models/expressions/#f-expressions) 
+is used in order to prevent race conditions and to increase performance.
+The other possible way to tackle this problem 
+was to create seperate model which would be store the hit counts (how many times view was visited).
+Messages are saved and updated using modified ModelSerializer.
+
+Message does not store information about its author - 
+if this functionality was to be added, it would require adding Foreign Key to User
+and storing Tokens in database in order to verify the user. 
+(Right now server does the verification based on token's signature 
+and its secret key, meaning that tokens are actually not stored in db)
+
 
 ### API Endpoints:
 | HTTP Method | API endpoint            | Request body                                       | Response body                                                                                                                                           | Description                                                                    | Authorization header |
 |-------------|-------------------------|----------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------|----------------------|
-| POST        | [api/auth/register/](https://messages-api-daftcode.herokuapp.com/api/auth/register/)       | Object {<br> username: str,<br> password: str<br>} | Object {<br> id: number,<br> username: str,<br> email: str,<br> first_name: str,<br> last_name: str,<br> is_admin: bool<br>}                            | Creates new user. Returns simplified user object.                              | None                 |
+| POST        | [api/auth/register/](https://messages-api-daftcode.herokuapp.com/api/auth/register/)       | Object {<br> username: str,<br> password: str<br>} | Object {<br> id: number,<br> username: str,<br> email: str,<br> first_name: str,<br> last_name: str,<br> is_staff: bool<br>}                            | Creates new user. Returns simplified user object.                              | None                 |
 | POST        | [api/auth/token/](https://messages-api-daftcode.herokuapp.com/api/auth/token/)          | Object {<br> username: str,<br> password: str<br>} | Object {<br> refresh: str,<br> access: str<br>}                                                                                                         | Returns personal JWT access and refresh tokens.                                | None                 |
 | POST        | [api/auth/token/refresh/](https://messages-api-daftcode.herokuapp.com/api/auth/token/refresh)  | Object {<br> refresh: str<br>}                     | Object {<br> access: str<br>}                                                                                                                           | Returns refreshed JWT access token.                                            | None                 |
 | GET         | [api/messages ](https://messages-api-daftcode.herokuapp.com/api/messages)            |                          X                         | Array\<Object\> [<br> Object {<br>  id: number,<br>  content: str,<br>  views: number,<br>  created_at: datetime,<br>  updated_at: datetime,<br> }<br>] | Lists all of the existing message objects.                                     | None                 |
@@ -44,14 +68,98 @@ You can see its main view at [homepage](https://messages-api-daftcode.herokuapp.
 ### Views:
 There are 2 urls which need to be handled in REST type API, when it comes to messages. 
 One for listing objects and creating new ones and one for operating on a specific object. 
-Since in **REST** architecture there should not be endpoints 
+Since in REST architecture there should not be endpoints 
 such as `api/messages/delete/{id}`, `api/messages/{id}/update` or anything like that, 
 there is no need for creating a view for each CRUD operation.
 
-`ListCreateMessageAPIView`  handles `api/messages` endpoint. Allows GET, POST and safe methods HEAD, OPTIONS.  
-`GetUpdateDeleteMessageAPIView`  handles `api/messages/{id}` endpoint. 
+**`ListCreateMessageAPIView`**  handles `api/messages` endpoint. Allows GET, POST and safe methods HEAD, OPTIONS.  
+**`GetUpdateDeleteMessageAPIView`**  handles `api/messages/{id}` endpoint. 
 Allows GET, PUT, PATCH, DELETE and safe methods HEAD, OPTIONS.
 
+### How to use this API:
+Here are some examples how you can interact with API using different tools (curl, Javascript, Python).  
+I personally recommend using Postman.
+
+Register yourself if you do not own an account.
+```shell script
+curl -d "username=YourUserName&password=YourPassword" -X POST https://messages-api-daftcode.herokuapp.com/api/auth/register/
+```
+Get your JWT token. 
+```javascript
+const request = fetch('https://messages-api-daftcode.herokuapp.com/api/auth/token/', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'  
+  },
+  body: JSON.stringify({
+    username: 'YourUserName',
+    password: 'YourPassword'
+  })
+})
+  .then(res => res.json())
+  .then(data => console.log(data))
+
+const {refresh, access} = request;
+```
+If your token expires **(access token lives for 2 hours, refresh token - 24h)**:
+```javascript
+const refresh = 'refresh token you previously redeemed or had stored';
+
+const request = fetch('https://messages-api-daftcode.herokuapp.com/api/auth/token/refresh/', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'  
+  },
+  body: JSON.stringify({
+    refresh: refresh,
+  })
+})
+  .then(res => res.json())
+  .then(data => console.log(data))
+
+const {access} = request;
+```
+Now you can send requests to the API endpoints. Attach Authorization header if you want to POST/PUT/PATCH/DELETE.
+```python
+import json
+import requests
+
+token = 'your JWT access token'
+headers = {
+    'Authorization': f'Bearer {token}',
+    'Content-Type': 'application/json' 
+}
+
+# get all messages - no token needed
+messages = requests.get('https://messages-api-daftcode.herokuapp.com/api/messages')
+print(messages.json())
+
+# create new message
+payload = json.dumps({'content': 'message content'})
+new_message = requests.post('https://messages-api-daftcode.herokuapp.com/api/messages',
+    data=payload,
+    headers=headers
+)
+print(new_message.json())
+
+# get message
+message = requests.get('https://messages-api-daftcode.herokuapp.com/api/messages/1')
+print(message.json())
+
+# update message
+payload = json.dumps({'content': 'updated content'})
+updated_message = requests.post('https://messages-api-daftcode.herokuapp.com/api/messages/1',
+    data=payload,
+    headers=headers
+)
+print(updated_message.json())
+
+# delete message
+delete = requests.post('https://messages-api-daftcode.herokuapp.com/api/messages/2',
+    headers=headers
+)
+print(delete.json())
+```
 
 ### Testing:
 All of API endpoints have their own unit tests. 
@@ -128,7 +236,9 @@ coverage run manage.py test
 coverage report -m
 ```
 
-### Possible future content:
+### Possible future content (outside of task's requirements):
 - User account customization
-- Info about message's author (e.g Message model with FK to User)
+- Info about message's author (e.g Message model with FK to User).
+- Permissions to access message (e.g only author can modify)
 - Query endpoint (get message by other attributes than its id)
+- Pagination (so that user would not receive everything at once)

@@ -13,5 +13,5 @@ class RegisterAPIView(GenericAPIView):
         user = serializer.save()
         return Response({
             "user": UserSerializer(user, context=self.get_serializer_context()).data,
-            "message": "User Created Successfully!",
+            "message": "User created successfully! You can now redeem your access token.",
         })

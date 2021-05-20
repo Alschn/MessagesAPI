@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - development
+      - heroku
 
   pull_request:
     branches:
